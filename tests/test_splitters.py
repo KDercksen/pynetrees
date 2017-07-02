@@ -26,6 +26,20 @@ def test_categorical3():
     assert left.size == 0 and right.size == 2
 
 
+def test_categorical4():
+    c = sp.CategoricalSplitter(0, np.array([1.]))
+    samples = np.array([0.])
+    left = c.split_sample_left(samples)
+    assert left is False
+
+
+def test_categorical5():
+    c = sp.CategoricalSplitter(0, np.array([1.]))
+    samples = np.array([1.])
+    left = c.split_sample_left(samples)
+    assert left is True
+
+
 def test_continuous1():
     c = sp.ContinuousSplitter(0, .5)
     samples = np.array([[.2], [.8]])
@@ -45,3 +59,17 @@ def test_continuous3():
     samples = np.array([[.3], [.4]])
     left, right = c.split(samples)
     assert left.size == 2 and right.size == 0
+
+
+def test_continuous4():
+    c = sp.ContinuousSplitter(0, .5)
+    samples = np.array([.3])
+    left = c.split_sample_left(samples)
+    assert left is True
+
+
+def test_continuous5():
+    c = sp.ContinuousSplitter(0, .5)
+    samples = np.array([.8])
+    left = c.split_sample_left(samples)
+    assert left is False

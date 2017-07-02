@@ -5,8 +5,10 @@ import numpy as np
 
 
 def probabilities(labels, classes):
-    counts = dict(zip(*np.unique(labels, return_counts=True)))
     size = labels.shape[0]
+    if size == 0:
+        return np.zeros(classes.shape[0])
+    counts = dict(zip(*np.unique(labels, return_counts=True)))
     return np.fromiter((counts.get(c, 0) / size for c in classes), np.float)
 
 
