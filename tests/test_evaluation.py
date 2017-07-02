@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from pytest import raises
 import numpy as np
 import pynetrees.evaluation as ev
 
@@ -11,7 +12,19 @@ def test_train_test_split1():
     assert train.shape[0] == 3 and test.shape[0] == 7
 
 
+def test_train_test_split2():
+    data = np.arange(0, 100)
+    with raises(ValueError):
+        ev.train_test_split(data)
+
+
 def test_accuracy1():
     labels = np.array([0, 0, 1, 1]).reshape((4, 1))
     preds = np.array([0, 1, 1, 1]).reshape((4, 1))
+    assert ev.accuracy(preds, labels) == .75
+
+
+def test_accuracy2():
+    labels = np.array([0., 0., 0., 0.]).reshape((4, 1))
+    preds = np.array([1., 0., 0., 0.])
     assert ev.accuracy(preds, labels) == .75
