@@ -1,14 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import numpy as np
 from .impurity import entropy, gini, probabilities
 from .splitters import ContinuousSplitter
+from math import log2, sqrt
+from random import sample
+import numpy as np
 
 
 METRICS = {
     'gini': gini,
     'entropy': entropy,
+}
+
+
+FEATURE_SUBSET_STRATS = {
+    'all': lambda x: range(1, x + 1),
+    'sqrt': lambda x: sample(range(1, x + 1), int(sqrt(x))),
+    'log2': lambda x: sample(range(1, x+1), int(log2(x))),
 }
 
 
@@ -52,17 +61,24 @@ class Node:
 
 class DecisionTree:
 
-    def __init__(self, metric='gini', max_depth=5):
+    def __init__(self, metric='gini', max_depth=5, subset_strategy='all'):
         self.tree = None
         self.n_features = None
         self.n_classes = None
 
-        self.metric = METRICS.get(metric)
-        if self.metric is None:
+        self.metric = metric
+        self.metric_f = METRICS.get(metric)
+        if self.metric_f is None:
             supported = list(METRICS.keys())
             raise KeyError('Supported metrics: {}'.format(supported))
 
         self.max_depth = max_depth if max_depth >= 0 else 0
+
+        self.subset_strategy = subset_strategy
+        self.subset_strategy_f = FEATURE_SUBSET_STRATS.get(subset_strategy)
+        if self.subset_strategy_f is None:
+            supported = list(FEATURE_SUBSET_STRATS.keys())
+            raise KeyError('Supported subset strategies: {}'.format(supported))
 
     def fit(self, samples):
         if samples.ndim != 2:
@@ -76,22 +92,22 @@ class DecisionTree:
         def _build_tree(samples, depth=0):
             idcount[0] += 1
             probs = probabilities(samples[:, 0], self.classes)
-            impurity = self.metric(probs)
+            impurity = self.metric_f(probs)
             if np.nonzero(probs)[0].size == 1 or depth == self.max_depth:
                 return Node(idcount[0], impurity, probs, None, None, None,
                             True)
             else:
                 best_splits = []
-                for f in range(1, self.n_features + 1):
+                for f in self.subset_strategy_f(self.n_features):
                     sorted_samples = samples[samples[:, f].argsort()]
                     fsplits = sorted_samples[:, f]
                     impurities = []
                     for s in fsplits:
                         splitter = ContinuousSplitter(f, s)
                         left, right = splitter.split(samples)
-                        left_probs = probabilities(left[:, 0], self.classes)
-                        right_probs = probabilities(right[:, 0], self.classes)
-                        v = self.metric(left_probs) + self.metric(right_probs)
+                        left_p = probabilities(left[:, 0], self.classes)
+                        right_p = probabilities(right[:, 0], self.classes)
+                        v = self.metric_f(left_p) + self.metric_f(right_p)
                         impurities.append((s, v))
                     # best split for this feature:
                     s, val = min(impurities, key=lambda x: x[1])
@@ -126,7 +142,15 @@ class DecisionTree:
         if not self.tree:
             return 'DecisionTree was not fitted'
         else:
-            m = 'DecisionTree <n_features: {}, n_classes: {}, metric: {}>\n' \
-                .format(self.n_features, self.n_classes, self.metric.__name__)
+            m = 'DecisionTree <' \
+                   'n_features: {}, ' \
+                   'n_classes: {}, ' \
+                   'metric: {}, ' \
+                   'subset_strategy: {}' \
+                   '>\n'.format(self.n_features,
+                                self.n_classes,
+                                self.metric,
+                                self.subset_strategy,
+                                )
             m += str(self.tree)
             return m

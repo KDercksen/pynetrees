@@ -68,3 +68,8 @@ def test_decisiontree_max_depth_negative():
 def test_decisiontree_max_depth_regular():
     t = DecisionTree(max_depth=10)
     assert t.max_depth == 10
+
+
+def test_decisiontree_unsupported_strat():
+    with raises(KeyError):
+        DecisionTree(subset_strategy='fuckoff')
