@@ -52,7 +52,7 @@ class Node:
 
 class DecisionTree:
 
-    def __init__(self, metric='gini'):
+    def __init__(self, metric='gini', max_depth=5):
         self.tree = None
         self.n_features = None
         self.n_classes = None
@@ -61,6 +61,8 @@ class DecisionTree:
         if self.metric is None:
             supported = list(METRICS.keys())
             raise KeyError('Supported metrics: {}'.format(supported))
+
+        self.max_depth = max_depth if max_depth >= 0 else 0
 
     def fit(self, samples):
         if samples.ndim != 2:
@@ -71,24 +73,20 @@ class DecisionTree:
 
         idcount = [-1]
 
-        def _build_tree(samples):
+        def _build_tree(samples, depth=0):
             idcount[0] += 1
             probs = probabilities(samples[:, 0], self.classes)
             impurity = self.metric(probs)
-            if np.nonzero(probs)[0].size == 1:
+            if np.nonzero(probs)[0].size == 1 or depth == self.max_depth:
                 return Node(idcount[0], impurity, probs, None, None, None,
                             True)
             else:
                 best_splits = []
                 for f in range(1, self.n_features + 1):
                     sorted_samples = samples[samples[:, f].argsort()]
-                    # create splits by convolving with [.5 .5]
-                    # this gives all values between the values in fvals.
-                    # example [1, 2, 3] -> [1.5, 2.5]
-                    weights = np.repeat(1., 2) / 2
-                    splitvs = np.convolve(sorted_samples[:, f], weights)[1:-1]
+                    fsplits = sorted_samples[:, f]
                     impurities = []
-                    for s in splitvs:
+                    for s in fsplits:
                         splitter = ContinuousSplitter(f, s)
                         left, right = splitter.split(samples)
                         left_probs = probabilities(left[:, 0], self.classes)
@@ -109,7 +107,8 @@ class DecisionTree:
                                 None, True)
                 else:
                     return Node(idcount[0], impurity, probs, splitter,
-                                _build_tree(left), _build_tree(right), False)
+                                _build_tree(left, depth=depth+1),
+                                _build_tree(right, depth=depth+1), False)
 
         self.tree = _build_tree(samples)
         return self
