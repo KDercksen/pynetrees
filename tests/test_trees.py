@@ -58,3 +58,13 @@ def test_decisiontree_fit_ndim():
     t = DecisionTree()
     with raises(ValueError):
         t.fit(np.array([1., 1., 1., 1.]))
+
+
+def test_decisiontree_max_depth_negative():
+    t = DecisionTree(max_depth=-1)
+    assert t.max_depth == 0
+
+
+def test_decisiontree_max_depth_regular():
+    t = DecisionTree(max_depth=10)
+    assert t.max_depth == 10
