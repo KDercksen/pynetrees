@@ -15,13 +15,13 @@ class Splitter:
     def split(self, samples):
         # Returns (left, right) data slices depending on split criteria
         # samples should be 2D array
-        pass
+        raise NotImplementedError
 
     def split_sample_left(self, sample):
         # For a single sample, return True if the sample should go left and
         # False if it should go right.
         # sample should be 1D array
-        pass
+        raise NotImplementedError
 
 
 class ContinuousSplitter(Splitter):
